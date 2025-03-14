@@ -1,9 +1,9 @@
-// import './App.css'
-
 import { useState, useEffect } from "react"
 import Search from "./components/Search"
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
+import { useDebounce } from "react-use";
+import { updateSearchCount } from "./appwrite";
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -17,7 +17,6 @@ const API_OPTIONS = {
   }
 }
 
-
 function App() {
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +26,15 @@ function App() {
   const [movieList, setMovieList] = useState([])
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchMovies = async () => {
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  // Debounce the search term to prevent making too many API requests
+  // by waiting for the user to stop typing for 500ms
+  useDebounce( 
+    () => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]
+  )
+
+  const fetchMovies = async (query = '') => {
     // to start the loading state as we are fetching the api
     setIsLoading(true);
     // seting the error message to empty because we are just calling the Api
@@ -35,7 +42,9 @@ function App() {
 
     try {
       // Where we want our movies to come from
-      const endpoint = `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      const endpoint = query 
+      ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
+      : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
       const response = await fetch(endpoint, API_OPTIONS);      
 
       // if response is not okay throw error message
@@ -53,6 +62,9 @@ function App() {
 
       setMovieList(data.results || []);
 
+      if (query && data.results.length > 0) {
+        await updateSearchCount(query, data.results[0])
+      };
     } 
     // For Catching Errors
     catch (error) {
@@ -65,8 +77,8 @@ function App() {
   }
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(searchTerm);
+  }, [searchTerm]);
 
   return (
     <main>
