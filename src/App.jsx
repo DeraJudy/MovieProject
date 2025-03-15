@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import Search from "./components/Search"
 import Spinner from "./components/Spinner";
 import MovieCard from "./components/MovieCard";
@@ -91,6 +91,10 @@ function App() {
     fetchMovies(searchTerm);
   }, [searchTerm]);
 
+  useEffect(() => {
+    loadTrendingMovies();
+  }, [])
+
   return (
     <main>
       <div className="pattern" />
@@ -106,8 +110,23 @@ function App() {
             <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           </header>
 
+          {trendingMovies.length > 0 && (
+            <section className="trending">
+              <h2>Trending Movies</h2>
+
+              <ul>
+                {trendingMovies.map((movie, index) => (
+                  <li key={movie.$id}>
+                    <p>{index + 1}</p>
+                    <img src={movie.poster_url} alt={movie.title} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="all-movies">
-            <h2 className="mt-[48px]">All Movies</h2>
+            <h2>All Movies</h2>
 
             {isLoading ? (
               <Spinner />
